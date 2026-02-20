@@ -1,0 +1,73 @@
+services:
+  # Nginx - reverse proxy и раздача статики
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: microblog_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./static:/usr/share/nginx/html:ro
+      - media_data:/app/static/media:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
+  # FastAPI приложение
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: microblog_app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/microblog
+      - DEBUG=false
+    volumes:
+      - media_data:/app/static/media
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
+  # PostgreSQL база данных
+  db:
+    image: postgres:15-alpine
+    container_name: microblog_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=microblog
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d microblog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - microblog_network
+
+volumes:
+  postgres_data:
+    name: microblog_postgres_data
+  media_data:
+    name: microblog_media_data
+
+networks:
+  microblog_network:
+    name: microblog_network
+    driver: bridge
