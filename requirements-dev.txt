@@ -1,0 +1,28 @@
+# Include production dependencies
+-r requirements.txt
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.4
+pytest-cov==4.1.0
+httpx==0.26.0
+aiosqlite==0.19.0
+
+# Linting
+flake8==7.0.0
+flake8-docstrings==1.7.0
+flake8-isort==6.1.1
+
+# Formatting
+black==24.1.1
+isort==5.13.2
+
+# Type checking
+mypy==1.8.0
+types-aiofiles==23.2.0.0
+
+# Security
+bandit==1.7.7
+
+# Pre-commit hooks
+pre-commit==3.6.0
